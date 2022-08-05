@@ -94,8 +94,6 @@ class YoloV1(nn.Module):
         print(params_dict)
         print("<>" * 10 + " \Models params" + "<>" * 10)
 
-        #return "\n".join(str_rep)
-
     def _compute_backbone_shape(self):
         """Provide backbone output shape based on model input shape"""
         img_shape = list(self.image_shape)
