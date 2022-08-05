@@ -109,3 +109,13 @@ class YoloV1(nn.Module):
         x = self.darknet(x)
         
         return self.create_fcs(x)
+
+
+if __name__ == "__main__":
+    device = "cpu"
+    model = YoloV1().to(device)
+    model.eval()
+
+    x = torch.randn(2, 3, 448, 448).to(device)
+    pred = model(x)
+    print(pred.shape)
