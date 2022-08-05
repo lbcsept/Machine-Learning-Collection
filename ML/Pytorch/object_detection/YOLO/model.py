@@ -52,6 +52,7 @@ class Yolov1(nn.Module):
         self.architecture = architecture_config
         self.in_channels = in_channels
         self.darknet = self._create_conv_layers(self.architecture)
+        print(kwargs)
         self.fcs = self._create_fcs(**kwargs)
 
     def forward(self, x):
@@ -117,3 +118,24 @@ class Yolov1(nn.Module):
             nn.LeakyReLU(0.1),
             nn.Linear(496, S * S * (C + B * 5)),
         )
+
+
+
+if __name__ == "__main__":
+    
+    print("*"*80 + "\nSTART\n" + "*"*80)
+    device = "cpu"
+    model = Yolov1(split_size=7, num_boxes=2, num_classes=20).to(device)
+    model.eval()
+
+    x = torch.randn(2, 3, 448, 448).to(device)
+    print(f"input shape : {x.shape}")
+    backbone, pred = model(x)
+    print(f"output shape : {pred.shape}")
+    
+    # x = torch.randn(2, 3, 1024, 1024).to(device)
+    # print(f"input shape : {x.shape}")
+    # backbone, pred = model(x)
+    # print(f"output shape : {pred.shape}")
+
+    print("*"*80 + "\END\n" + "*"*80)
