@@ -1,10 +1,11 @@
 
 from torch.utils.data import Dataset
-from torchvision import transforms, load
+from torchvision import transforms, load, io
 
 from glob import glob
 import os 
 
+import numpy as np
 # Image augmentation and preprocessing
 #transform = transforms.Compose([transforms.ToTensor()])
 
@@ -34,3 +35,56 @@ class ClassifDatasetFromFolder(Dataset):
 
 
         return data, target
+
+
+def read_yolo_annot_file(fps):
+    
+    #with open(fps) as f:
+    # cl, x0, y0, w, h
+    return np.load_txt(fps)   
+
+def YoloDataset(Dataset):
+    
+    def __init__(self, pict_dir, label_dir, 
+                 nclass = 20, nbox =2, s_grid =7,
+                 label_classes = None, 
+                 transforms = None, annot_format="yolo", label_ext='.txt'):
+        
+        super(YoloDataset, self).__init__()
+        
+        self.pict_dir = pict_dir
+        self.label_dir = label_dir
+        self.annor_format = annot_format
+        self.transforms = transforms
+        picts_dict = { os.path.spliext(os.path.basename(fps))[0]:fps 
+                       for fps in os.listdir(pict_dir) if os.path.splitext(fps)[-1].lower() 
+                       not in [label_ext]}
+
+        labels_dict = { os.path.spliext(os.path.basename(fps))[0]:fps 
+                       for fps in os.listdir(label_dir) if os.path.splitext(fps)[-1].lower() 
+                     in [label_ext]}
+        self.fps = [(picts_dict[ky], labels_dict[ky]) for ky in picts_dict.keys() 
+                    if ky in labels_dict.keys()]
+        self.label_classes = label_classes
+        
+    def __len__(self):
+        return len(self.fps)
+    
+    def __getitem__(self, ix):
+        
+        pict_fp, label_fp = self.fps[ix]
+        
+        img = io.read_image(pict_fp)
+        np_annot = np.load_txt(label_fp)
+        clis, box_coords = np_annot[0], np_annot[1:5]  
+        class_labels = [self.label_classes.index(cli) for cli in clis]
+            
+        if self.transform:
+            transformed = self.transforms(image=img, bboxes=box_coords, class_labels=class_labels)
+            img = transformed['image']
+            bboxes = transformed['bboxes']
+        
+        
+        # adjust anchors to closest split origin    
+        
+        return img, bboxes
