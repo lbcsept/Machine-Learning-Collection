@@ -93,7 +93,7 @@ def YoloDataset(Dataset):
         
         for bbxi, bbox in enumerate(bboxes):
             
-            # adjust bboxe center relatively to closest split origin        
+            # adjust bboxe center relatively to origin of closest split
             x0, y0, w, h = bbox
             xsplit, ysplit = int(x0/self.S), int((y0/self.S))
             x0cell, y0cell = x0 - xsplit, y0 - ysplit
