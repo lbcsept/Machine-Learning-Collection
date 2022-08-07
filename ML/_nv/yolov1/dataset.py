@@ -88,21 +88,25 @@ def YoloDataset(Dataset):
             img = transformed['image']
             bboxes = transformed['bboxes']
         
-        
-        # adjust bboxes to closest split origin    
-        
         #bboxes = np.array(bboxes)
-        target = torch.zeros(self.S * self.S, self.C + 5 * self.B)
+        target = torch.zeros(self.S * self.S, self.C + 5) # * self.B)
         
-        for bbox in bboxes:
+        for bbxi, bbox in enumerate(bboxes):
             
+            # adjust bboxe center relatively to closest split origin        
             x0, y0, w, h = bbox
             xsplit, ysplit = int(x0/self.S), int((y0/self.S))
             x0cell, y0cell = x0 - xsplit, y0 - ysplit
-        # create class table with 
-        #class_tab = np.zeros[len(clis), self.C]
-        # TODO :put 1 to corresponding class of clis
-        ## class_tab[cli]
+
+            # if corresponding cell does not already have a bbox, then put current one
+            if target[xsplit, ysplit, -5] == 0:
+                target[xsplit, ysplit, -5] = 1
+                target[xsplit, ysplit, clis[bbxi]] = 1
+                target[-4] = x0cell
+                target[-3] = y0cell
+                target[-2] = w
+                target[-1] = h
+                 
+                    
         
-        
-        return img, bboxes
+        return img, target
