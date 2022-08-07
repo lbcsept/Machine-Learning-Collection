@@ -31,11 +31,11 @@ class ClassifDatasetFromFolder(Dataset):
 
     def __getitem__(self, ix):
         fp = self.img_fps[ix]
-        img = torchvision.
+        img = io.read_image
         label_name = self.labels_find_fn(fp)
 
 
-        return data, target
+        return img, label_name
 
 
 def read_yolo_annot_file(fps):
