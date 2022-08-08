@@ -4,6 +4,8 @@
     // Pour plus d'informations, visitez : https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
+
 
 
         {
@@ -28,6 +30,14 @@
             "type": "python",
             "request": "launch",
             "program": "/shared/ds/apps/nv_ML_collection/Machine-Learning-Collection/ML/_nv/yolov1/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Train_home",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/nikoenki/Documents/Machine-Learning-Collection/ML/_nv/yolov1/train.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }
