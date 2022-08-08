@@ -6,6 +6,7 @@ import numpy as np
 
 
 from model import YoloV1
+from dataset import YoloDataset
 import config 
 from utils import input_shape_from_image_shape
 
@@ -38,7 +39,7 @@ lr = config.LEARNING_RATE
 num_epoch = config.EPOCHS
 
 # # Loading model
-config.mode = "classification"
+config.mode = "object_detection" #classification"
 model = YoloV1(**config.__dict__)
 model= model.to(device)
 model.print_params()
@@ -46,11 +47,22 @@ model.print_params()
 
 
 # # Train and Validation Dataloaders
-train_loader = DataLoader(dataset.TrainingSet())
-test_loader = DataLoader(dataset.ValidationSet())
+
+train_set = YoloDataset(pict_dir = config.train + "/images", label_dir = config.train + "/labels", 
+                        nclass = config.nclass, nbox = config.nbox, s_grid = config.s_grid, label_classes=config.names)
+
+data, target = train_set[10]
+print(data.shape)
+print(target.shape)
+print(target)
+
+#train_set = YoloDataset(pict_dir = config.train + "/images", label_dir = config.train + "/labels", 
+#                        nclass = config.nclass, nbox = config.nbox, s_grid = config.s_grid)
+#train_loader = DataLoader(train_set, batch_size = config.BATCH_SIZE, shuffle=True)
+#test_loader = DataLoader(valid_set, batch_size = config.BATCH_SIZE, shuffle=True)
 
 
-#train_loader 
+
 
 
 ## training one epoch

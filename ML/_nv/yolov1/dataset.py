@@ -1,7 +1,7 @@
 
 import torch
 from torch.utils.data import Dataset
-from torchvision import transforms, load, io
+from torchvision import io
 
 from glob import glob
 import os 
@@ -44,27 +44,23 @@ def read_yolo_annot_file(fps):
     # cl, x0, y0, w, h
     return np.load_txt(fps)   
 
-def YoloDataset(Dataset):
+class YoloDataset(Dataset):
     
-    def __init__(self, pict_dir, label_dir, 
-                 nclass = 20, nbox =2, s_grid =7,
-                 label_classes = None, 
-                 transforms = None, annot_format="yolo", label_ext='.txt'):
+    def __init__(self, pict_dir, label_dir, nclass = 20, nbox =2, s_grid =7, label_classes = None, transforms = None, label_ext='.txt'):
         
         super(YoloDataset, self).__init__()
         
         self.pict_dir = pict_dir
         self.label_dir = label_dir
-        self.annor_format = annot_format
         self.C = nclass
         self.B = nbox
         self.S = s_grid
         self.transforms = transforms
-        picts_dict = { os.path.spliext(os.path.basename(fps))[0]:fps 
+        picts_dict = { os.path.splitext(os.path.basename(fps))[0]:os.path.join(pict_dir,fps)
                        for fps in os.listdir(pict_dir) if os.path.splitext(fps)[-1].lower() 
                        not in [label_ext]}
 
-        labels_dict = { os.path.spliext(os.path.basename(fps))[0]:fps 
+        labels_dict = { os.path.splitext(os.path.basename(fps))[0]:os.path.join(label_dir,fps)
                        for fps in os.listdir(label_dir) if os.path.splitext(fps)[-1].lower() 
                      in [label_ext]}
         self.fps = [(picts_dict[ky], labels_dict[ky]) for ky in picts_dict.keys() 
@@ -79,33 +75,37 @@ def YoloDataset(Dataset):
         pict_fp, label_fp = self.fps[ix]
         
         img = io.read_image(pict_fp)
-        np_annot = np.load_txt(label_fp)
-        clis, box_coords = np_annot[0], np_annot[1:5]  
-        class_labels = [self.label_classes.index(cli) for cli in clis]
+        np_annot = np.loadtxt(label_fp, ndmin=2)
+        print(np_annot.shape)
+        clis, box_coords = np_annot[:, 0], np_annot[:, 1:5]
+        bboxes =  box_coords.tolist()
+        clis = clis.astype(int).tolist()
+        class_labels = [self.label_classes[int(cli)] for cli in clis]
             
-        if self.transform:
-            transformed = self.transforms(image=img, bboxes=box_coords.to_list(), class_labels=class_labels)
+        if self.transforms:
+            transformed = self.transforms(image=img, bboxes=bboxes, class_labels=class_labels)
             img = transformed['image']
             bboxes = transformed['bboxes']
         
         #bboxes = np.array(bboxes)
-        target = torch.zeros(self.S * self.S, self.C + 5) # * self.B)
+        target = torch.zeros(self.S, self.S, self.C + 5) # * self.B)
         
         for bbxi, bbox in enumerate(bboxes):
             
             # adjust bboxe center relatively to origin of closest split
             x0, y0, w, h = bbox
-            xsplit, ysplit = int(x0/self.S), int((y0/self.S))
-            x0cell, y0cell = x0 - xsplit, y0 - ysplit
-
+            xsplit  = min(x0/(1/self.S), self.S-1)
+            ysplit = min((y0/(1/self.S)), self.S-1)
+            x0cell, y0cell = xsplit - int(xsplit), ysplit - int(ysplit)
+            xsplit, ysplit = int(xsplit), int(ysplit)
             # if corresponding cell does not already have a bbox, then put current one
             if target[xsplit, ysplit, -5] == 0:
                 target[xsplit, ysplit, -5] = 1
                 target[xsplit, ysplit, clis[bbxi]] = 1
-                target[-4] = x0cell
-                target[-3] = y0cell
-                target[-2] = w
-                target[-1] = h
+                target[xsplit, ysplit, -4] = x0cell
+                target[xsplit, ysplit, -3] = y0cell
+                target[xsplit, ysplit, -2] = w
+                target[xsplit, ysplit, -1] = h
                  
                     
         
