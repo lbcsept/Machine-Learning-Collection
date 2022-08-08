@@ -6,6 +6,8 @@ from torchvision import io
 from glob import glob
 import os 
 
+import cv2
+
 import numpy as np
 # Image augmentation and preprocessing
 #transform = transforms.Compose([transforms.ToTensor()])
@@ -74,16 +76,18 @@ class YoloDataset(Dataset):
         
         pict_fp, label_fp = self.fps[ix]
         
-        img = io.read_image(pict_fp)
+        img = cv2.cvtColor(cv2.imread(pict_fp), cv2.COLOR_BGR2RGB) #io.read_image(pict_fp)
         np_annot = np.loadtxt(label_fp, ndmin=2)
         print(np_annot.shape)
         clis, box_coords = np_annot[:, 0], np_annot[:, 1:5]
         bboxes =  box_coords.tolist()
         clis = clis.astype(int).tolist()
         class_labels = [self.label_classes[int(cli)] for cli in clis]
+        
             
         if self.transforms:
-            transformed = self.transforms(image=img, bboxes=bboxes, class_labels=class_labels)
+            #transformed = self.transforms(image=img, bboxes=bboxes, class_labels=class_labels)
+            transformed = self.transforms(image=img, bboxes=bboxes)
             img = transformed['image']
             bboxes = transformed['bboxes']
         
@@ -109,4 +113,4 @@ class YoloDataset(Dataset):
                  
                     
         
-        return img, target
+        return img.float(), target

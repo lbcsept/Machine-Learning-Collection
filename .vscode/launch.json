@@ -4,6 +4,17 @@
     // Pour plus d'informations, visitez : https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
+
+        {
+            "name": "Python : fichier actif, debug all libs",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+
         {
             "name": "Python : fichier actif",
             "type": "python",
@@ -11,6 +22,15 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Train",
+            "type": "python",
+            "request": "launch",
+            "program": "/shared/ds/apps/nv_ML_collection/Machine-Learning-Collection/ML/_nv/yolov1/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
+
     ]
 }
