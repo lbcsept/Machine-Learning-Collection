@@ -1,7 +1,8 @@
 ## ############################################################################
 ## Dataset config
 ## yolo_yml_file = "/shared/ds/data/compvis/maize/fusarium/_DATASET_REVIEWED_348IMG/yolo_v5_5CL/fusalab_yolov5_02.yaml"
-yolo_yml_file = "/home/nikoenki/Documents/Machine-Learning-Collection/ML/_nv/yolov1/samples/samples.yml"
+#yolo_yml_file = "/home/nikoenki/Documents/Machine-Learning-Collection/ML/_nv/yolov1/samples/samples.yml"
+yolo_yml_file = "samples/samples.yml"
 
 ## ############################################################################
 ## Hyper parameters for training

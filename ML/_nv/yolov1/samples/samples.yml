@@ -1,6 +1,6 @@
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
-train: /home/nikoenki/Documents/Machine-Learning-Collection/ML/_nv/yolov1/samples/
-val: /home/nikoenki/Documents/Machine-Learning-Collection/ML/_nv/yolov1/samples
+train: samples
+val: samples
 
 # number of classes
 nc: 20

@@ -3,7 +3,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 import numpy as np
-
+import os
 
 from model import YoloV1
 from dataset import YoloDataset
@@ -13,9 +13,15 @@ from utils import input_shape_from_image_shape
 import tqdm
 import yaml 
 
+# get working dir
+wd = os.path.dirname(os.path.abspath(__file__))
 
-## loading config file
-with open(config.yolo_yml_file) as file:
+## loading config file (exp_fp: experiment file path)
+exp_fp = config.yolo_yml_file
+if not os.path.isabs(exp_fp):
+    exp_fp = os.path.join(wd, exp_fp)
+    print(exp_fp)
+with open(exp_fp) as file:
     # The FullLoader parameter handles the conversion from YAML
     # scalar values to Python the dictionary format
     dataset_confs = yaml.load(file, Loader=yaml.FullLoader)
@@ -47,6 +53,10 @@ model.print_params()
 
 
 # # Train and Validation Dataloaders
+if not os.path.isabs(config.train):
+    config.train = os.path.join(wd, config.train)
+if not os.path.isabs(config.val):
+    config.val = os.path.join(wd, config.val)
 
 train_set = YoloDataset(pict_dir = config.train + "/images", label_dir = config.train + "/labels", 
                         nclass = config.nclass, nbox = config.nbox, s_grid = config.s_grid, label_classes=config.names)
