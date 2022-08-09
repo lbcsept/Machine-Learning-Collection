@@ -78,7 +78,6 @@ class YoloDataset(Dataset):
         
         img = cv2.cvtColor(cv2.imread(pict_fp), cv2.COLOR_BGR2RGB) #io.read_image(pict_fp)
         np_annot = np.loadtxt(label_fp, ndmin=2)
-        print(np_annot.shape)
         clis, box_coords = np_annot[:, 0], np_annot[:, 1:5]
         bboxes =  box_coords.tolist()
         clis = clis.astype(int).tolist()

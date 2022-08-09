@@ -12,7 +12,7 @@ class YoloLoss(nn.Module):
         self.C = nclass
         self.B = nbox
         self.S = s_grid
-        self.ncol_coords = ncol_coords
+        self.ncol_coords = ncol_coords # 5 objectness, x0, y0, w, h
         self.lambda_c = lambda_c # coords
         self.lambda_no = lambda_no # no object
         
@@ -20,44 +20,71 @@ class YoloLoss(nn.Module):
     def forward(self, x, target):
         
         ## # x  shape (s, s, c + b * ncol_coords) == > concat [s, s c + b1 * ncol_coords, s, s c + b2 * ncol_coords] ...
-        pred_bboxes = torch.reshape(x,  shape = (-1, self.S, self.S, self.C + self.B*self.ncol_coords))
-        objectness_cols = [ self.C + self.ncol_coords * i for i in range (self.B)]
-        
+        pred_bboxes = torch.reshape(x,  shape = (-1, self.S, self.S, self.C + self.B * self.ncol_coords))
+        #objectness_cols = [ self.C + self.ncol_coords * i for i in range (self.B)]
+
+        ## ##################################################################################
+        ##  COORDINATES LOSS 
+        ## ##################################################################################
+
+        ## extract coordinated from pred_bboxes and reshape so all boxes are in "parallel" on last dimension (ready for final sum)
+        pred_bboxes_t1 = pred_bboxes[:,:,:,-(self.B*self.ncol_coords):].reshape(pred_bboxes.shape[0], self.S, self.S, self.B, self.ncol_coords)
+
+        ## compute iou of all boxes vs target
         bious = []
-        b_startc = (self.B * self.ncol_coords)
         for bi in range(self.B):
-            b_endc = -(b_startc - self.ncol_coords)
-            b_endc =  self.C + self.B*self.ncol_coords + 1 if b_endc<=0 else b_endc
-            iou = intersection_over_union(pred_bboxes[..., -b_startc:b_endc], target[..., -self.ncol_coords:])
+            iou = intersection_over_union(pred_bboxes_t1[..., bi, 1:], target[..., -(self.ncol_coords-1):])
             bious.append(iou)
-            b_startc -= self.ncol_coords
 
-        pred_best_bbxi = torch.cat(bious, axis=-1)
-        _, best_bx_per_s = torch.max(pred_best_bbxi)
+        # get best box per cell (max iou) ==> best_bx_per_s
+        pred_best_bbxi = torch.cat([t.unsqueeze(0).type(torch.int64) for t in bious])
+        _, best_bx_per_s = torch.max(pred_best_bbxi, dim=0)
 
+        ## where are actually the objects in target
+        exists_box = target[..., self.C].unsqueeze(3) # => shape : batch, s, s, 1
 
-        ## where are the objects in target
-        exists_box = target[..., 20].unsqueeze(3) # shape : batch, s, s, 1
+        ## build a filter having 1 for all coords of best boxes, 0 for the rest
+        best_box_filter = torch.zeros((pred_bboxes.shape[0], self.S, self.S, self.B, self.ncol_coords)).to(pred_best_bbxi.device)
 
-        ##  COORDINATES 
-                 
-        # batch, s, s, 1 x batch, s, s, ncol_coors ==> 1 x batch, s, s, ncol_coors
-        box_tagets = exists_box * box_tagets[..., -self.ncol_coords] 
+        ## ugly gugly !! 
+        ## TODO: find a torch way to do this
+        for bai in range(best_bx_per_s.shape[0]):
+            for si1 in range(best_bx_per_s.shape[1]):
+                for si2 in range(best_bx_per_s.shape[2]):
+                    bbi = best_bx_per_s[bai, si1, si2]
+                    for ci in range(self.ncol_coords):
+                        best_box_filter[bai, si1, si2, bbi, ci] = 1.0
 
-        # 
+        ## pred_bboxes_t1 mutiplied by filter will have coords values only on best boxes, rest will be 0
+        ## final sum on boxes axis (-2) reduce to dim (batch, S, S, coords)
+        box_predictions = torch.sum((best_box_filter * pred_bboxes_t1), axis=-2) 
+        #box_predictions = box_predictions[..., -(self.ncol_coords-1):]
+
+        # Only compute loss where there are actually objects in GT
+        box_predictions *= exists_box
+        box_targets = exists_box * target[..., -(self.ncol_coords-1):]
+
+        # compute sqrt of h and w for predictions and target (keeping sign of the coords)
+        box_predictions[..., -2:] = torch.sign(box_predictions[..., -2:]) * \
+            torch.sqrt(torch.abs(box_predictions[..., -2:] + 1e-6))
+        box_targets[..., -2:] =  torch.sqrt(box_targets[..., -2:] )
+
+        # compute Mean square Error loss 
+        mse = nn.MSELoss(reduction="sum")
+        box_loss = mse(torch.flatten(box_predictions[..., -(self.ncol_coords-1):], end_dim=-2), 
+                    torch.flatten( box_targets[..., -(self.ncol_coords-1):] , end_dim=-2))
+        #print(f"box_loss{box_loss}")
+
+        ## ##################################################################################
+        ##  COORDINATES LOSS 
+        ## ##################################################################################
+
         
-        box_predictions_ =  pred_bboxes[:,:,:,self.C: ].reshape(-1, self.S, self.S, self.B, self.ncol_coords)
-        
-
-        ## 
-
-        ## no object loss
-        self.lamdba_no
 
         ## class loss
 
 
         
-
+        loss = box_loss
 
         return loss
