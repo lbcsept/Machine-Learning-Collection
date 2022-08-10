@@ -108,8 +108,14 @@ def train_one_epoch(model, criterion, optim, loader, device):
         _, scores = model(data)
         
         # loss computation
-        lossA = criterion_RC(scores, target)
-        loss = criterion(scores, target)
+        lossRC, lossRC_dict = criterion_RC(scores, target)
+        loss, loss_dict = criterion(scores, target)
+        for k, v in lossRC_dict.items():
+            if v - loss_dict[k] != 0.0:
+                print(f"{k}:{v} |{loss_dict[k]}", end=";")
+            else:
+                print(f"{k}:OK", end=";")
+        print("\n")
         losses.append(loss.item())
 
         # flush out the gradients stored in the optimizer 

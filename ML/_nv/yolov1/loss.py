@@ -62,7 +62,7 @@ class YoloLoss(nn.Module):
         box_predictions = torch.sum((best_box_filter * pred_coords), axis=-2) 
 
         # Only compute loss where there are actually objects in GT
-        box_predictions *= exists_box
+        #box_predictions *= exists_box
         box_targets = exists_box * target[..., -(self.ncol_coords-1):]
 
         # compute sqrt of h and w for predictions and target (keeping sign of the coords)
@@ -72,10 +72,25 @@ class YoloLoss(nn.Module):
 
         # compute Mean square Error loss 
         box_loss = self.coord_loss_fn(
-            torch.flatten(box_predictions[..., -(self.ncol_coords-1):], end_dim=-2), 
-            torch.flatten( box_targets[..., -(self.ncol_coords-1):] , end_dim=-2)
+            torch.flatten(exists_box * box_predictions[..., -(self.ncol_coords-1):], end_dim=-2), 
+            torch.flatten(box_targets[..., -(self.ncol_coords-1):] , end_dim=-2)
         )
-        print(f">box_loss : {box_loss}")
+
+
+        ## ##################################################################################
+        ##  Obj LOSS 
+        ## ##################################################################################
+        object_loss = self.objs_losses_fn(
+            torch.flatten(exists_box * box_predictions[..., 0:1], end_dim=-2),
+            torch.flatten(exists_box * target[..., -self.ncol_coords:-(self.ncol_coords-1)], end_dim=-2),
+        )
+        
+
+        ## ##################################################################################
+        ##  No Obj LOSS 
+        ## ##################################################################################
+        no_object_loss = -10000
+        
 
         ## ##################################################################################
         ##  Classes LOSS 
@@ -87,24 +102,7 @@ class YoloLoss(nn.Module):
              torch.flatten(exists_box * target[..., :self.C], end_dim=-2)
         )
 
-        print(f">class loss : {class_loss}")
-
-        ## ##################################################################################
-        ##  No Obj LOSS 
-        ## ##################################################################################
-
-
-        ## ##################################################################################
-        ##  Obj LOSS 
-        ## ##################################################################################
-
-
-        ## class loss
-
-        print(f"RC box_loss : {box_loss}")
-        print(f"RC class loss : {class_loss}")
-
         
         loss = box_loss
 
-        return loss
+        return loss, {"box_loss": box_loss, "object_loss": object_loss, "no_object_loss": no_object_loss, "class_loss": class_loss}

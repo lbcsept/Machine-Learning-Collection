@@ -113,8 +113,9 @@ class YoloLossRC(nn.Module):
             torch.flatten(exists_box * predictions[..., :20], end_dim=-2,),
             torch.flatten(exists_box * target[..., :20], end_dim=-2,),
         )
-        print(f"RC box_loss : {box_loss}")
-        print(f"RC class loss : {class_loss}")
+        # print(f"RC box_loss : {box_loss}")
+        # print(f"RC object_loss {object_loss}")
+        # print(f"RC class loss : {class_loss}")
 
 
         loss = (
@@ -124,4 +125,4 @@ class YoloLossRC(nn.Module):
             + class_loss  # fifth row
         )
 
-        return loss
+        return loss, {"box_loss": box_loss, "object_loss": object_loss, "no_object_loss": no_object_loss, "class_loss": class_loss}
