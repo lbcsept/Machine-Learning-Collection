@@ -6,7 +6,7 @@ yolo_yml_file = "samples/samples.yml"
 
 ## ############################################################################
 ## Hyper parameters for training
-BATCH_SIZE = 5
+BATCH_SIZE = 2
 LEARNING_RATE = 1e-3
 EPOCHS = 3
 

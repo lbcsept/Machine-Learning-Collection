@@ -84,9 +84,9 @@ train_set = YoloDataset(pict_dir = config.train + "/images", label_dir = config.
 
 train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, shuffle=True)
 data, target = train_set[10]
-print(data.shape)
-print(target.shape)
-print(target)
+#print(data.shape)
+#print(target.shape)
+#print(target)
 
 #train_set = YoloDataset(pict_dir = config.train + "/images", label_dir = config.train + "/labels", 
 #                        nclass = config.nclass, nbox = config.nbox, s_grid = config.s_grid)
