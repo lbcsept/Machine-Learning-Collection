@@ -89,8 +89,14 @@ class YoloLoss(nn.Module):
         ## ##################################################################################
         ##  No Obj LOSS 
         ## ##################################################################################
-        no_object_loss = -10000
-        
+        no_object_loss = 0
+        col_obji = 0
+        for bi in reversed(range(self.B)):
+            col_obji -= self.ncol_coords
+            no_object_loss += self.objs_losses_fn(
+                torch.flatten((1 - exists_box) * pred_bboxes[..., col_obji:(col_obji+1)], end_dim=-2),
+                torch.flatten((1 - exists_box) * target[..., -self.ncol_coords:-(self.ncol_coords-1)], end_dim=-2)
+            )
 
         ## ##################################################################################
         ##  Classes LOSS 
