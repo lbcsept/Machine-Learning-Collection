@@ -7,21 +7,22 @@ from utils_to_recode import intersection_over_union
 
 class YoloLoss(nn.Module):
     
-    def __init__(self, nclass = 20, nbox =2, s_grid =7, ncol_coords = 4, lambda_c = 4.0, lambda_no=1.0, **kwargs):
+    def __init__(self, nclass = 20, nbox =2, s_grid =7, ncol_coords = 4, lambda_coord = 5.0, lambda_noobj = 0.5, **kwargs):
         super(YoloLoss, self).__init__()
         self.C = nclass
         self.B = nbox
         self.S = s_grid
-        self.ncol_coords = ncol_coords # 5 objectness, x0, y0, w, h
-        self.lambda_c = lambda_c # coords
-        self.lambda_no = lambda_no # no object
+        self.ncol_coords = ncol_coords # 5 columns : objectness, x0, y0, w, h
+        self.lambda_coord = lambda_coord # coords
+        self.lambda_noobj = lambda_noobj # no object
         self.coord_loss_fn = nn.MSELoss(reduction="sum")
         self.class_loss_fn = nn.MSELoss(reduction="sum")
         self.objs_losses_fn = nn.MSELoss(reduction="sum") 
 
     def forward(self, x, target):
         
-        ## # x  shape (s, s, c + b * ncol_coords) == > concat [s, s c + b1 * ncol_coords, s, s c + b2 * ncol_coords] ...
+        ## # x  shape (s, s, c + b * ncol_coords) ==> 
+        # concat [s, s c + b1 * ncol_coords, s, s c + b2 * ncol_coords] ...
         pred_bboxes = torch.reshape(x,  shape = (-1, self.S, self.S, self.C + self.B * self.ncol_coords))
         #objectness_cols = [ self.C + self.ncol_coords * i for i in range (self.B)]
 
@@ -29,8 +30,10 @@ class YoloLoss(nn.Module):
         ##  COORDINATES LOSS 
         ## ##################################################################################
 
-        ## extract coordinated from pred_bboxes and reshape so all boxes are in "parallel" on last dimension (ready for final sum)
-        pred_coords = pred_bboxes[:,:,:,-(self.B*self.ncol_coords):].reshape(pred_bboxes.shape[0], self.S, self.S, self.B, self.ncol_coords)
+        ## extract coordinated from pred_bboxes and reshape so all boxes are in "parallel" 
+        ## on last dimension (ready for final sum)
+        pred_coords = pred_bboxes[:,:,:,-(self.B*self.ncol_coords):].reshape(pred_bboxes.shape[0], \
+            self.S, self.S, self.B, self.ncol_coords)
 
         ## compute iou of all boxes vs target
         bious = []
@@ -46,7 +49,8 @@ class YoloLoss(nn.Module):
         exists_box = target[..., self.C].unsqueeze(3) # => shape : batch, s, s, 1
 
         ## build a filter having 1 for all coords of best boxes, 0 for the rest
-        best_box_filter = torch.zeros((pred_bboxes.shape[0], self.S, self.S, self.B, self.ncol_coords)).to(pred_best_bbxi.device)
+        best_box_filter = torch.zeros((pred_bboxes.shape[0], self.S, self.S,\
+             self.B, self.ncol_coords)).to(pred_best_bbxi.device)
 
         ## ugly gugly !! 
         ## TODO: find a torch way to do this
@@ -95,7 +99,8 @@ class YoloLoss(nn.Module):
             col_obji -= self.ncol_coords
             no_object_loss += self.objs_losses_fn(
                 torch.flatten((1 - exists_box) * pred_bboxes[..., col_obji:(col_obji+1)], end_dim=-2),
-                torch.flatten((1 - exists_box) * target[..., -self.ncol_coords:-(self.ncol_coords-1)], end_dim=-2)
+                torch.flatten((1 - exists_box) * target[..., -self.ncol_coords:-(self.ncol_coords-1)],\
+                     end_dim=-2)
             )
 
         ## ##################################################################################
@@ -108,7 +113,12 @@ class YoloLoss(nn.Module):
              torch.flatten(exists_box * target[..., :self.C], end_dim=-2)
         )
 
-        
-        loss = box_loss
+        loss = (
+            self.lambda_coord * box_loss 
+            + object_loss  
+            + self.lambda_noobj * no_object_loss 
+            + class_loss
+        )
 
-        return loss, {"box_loss": box_loss, "object_loss": object_loss, "no_object_loss": no_object_loss, "class_loss": class_loss}
+        return loss, {"loss": loss, "box_loss": box_loss, "object_loss": object_loss, \
+            "no_object_loss": no_object_loss, "class_loss": class_loss}
