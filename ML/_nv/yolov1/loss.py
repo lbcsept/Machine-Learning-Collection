@@ -2,7 +2,7 @@
 import torch
 from torch import nn
 
-from utils_to_recode import intersection_over_union
+from to_recode.utils_to_recode import intersection_over_union
 
 
 class YoloLoss(nn.Module):

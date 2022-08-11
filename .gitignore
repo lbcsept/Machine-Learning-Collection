@@ -1,5 +1,13 @@
 .idea/
+__pycache__/
 ML/Pytorch/more_advanced/image_captioning/flickr8k/
 ML/algorithms/svm/__pycache__/utils.cpython-38.pyc
-__pycache__/
+ML/Pytorch/object_detection/YOLO/data/
 ML/Pytorch/object_detection/YOLO/data/data/
+ML/Pytorch/object_detection/YOLO/data/VOCtest_06-Nov-2007.tar
+ML/Pytorch/object_detection/YOLO/data/VOCtrainval_06-Nov-2007.tar
+ML/Pytorch/object_detection/YOLO/data/VOCtrainval_11-May-2012.tar
+ML/_nv/yolov1/models/
+ML/_nv/yolov1/nohup.out
+*.tar
+*.pth
