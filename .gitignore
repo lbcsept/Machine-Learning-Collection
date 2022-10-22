@@ -12,3 +12,4 @@ ML/_nv/yolov1/models/
 ML/_nv/yolov1/nohup.out
 *.tar
 *.pth
+mlruns/
