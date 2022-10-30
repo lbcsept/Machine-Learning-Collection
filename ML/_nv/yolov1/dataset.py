@@ -1,13 +1,12 @@
 import logging
 import torch
 from torch.utils.data import Dataset
-from torchvision import io
+from torchvision import transforms, load, io
 
 from glob import glob
 import os 
 
 import cv2
-
 import numpy as np
 # Image augmentation and preprocessing
 #transform = transforms.Compose([transforms.ToTensor()])
