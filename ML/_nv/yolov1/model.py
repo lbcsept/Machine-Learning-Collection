@@ -3,7 +3,7 @@ from torch import block_diag, nn
 import torch
 import numpy as np
 
-from utils import input_shape_from_image_shape
+from utils.misc import input_shape_from_image_shape
 
 # kernel size, padding, stride,  out_channels
 architectures = {"24":
@@ -46,7 +46,7 @@ class ConvBlock(nn.Module):
 class YoloV1(nn.Module):
     
     def __init__(self, arch_id="24", nclass=20, nbox=2, s_grid=7, image_shape=(448, 448, 3),
-            hid_ly=496, head_dropout_p=0.0, lkrelu_slope = 0.1, ncol_coords=5, mode="object_detection",
+            hid_ly=496, head_dropout_p=0.0, lkrelu_slope = 0.1, ncol_coords=5, mode="object_detection", nohead=False,
             **kwargs):
         """_summary_
         Args:
@@ -81,10 +81,12 @@ class YoloV1(nn.Module):
 
         self.backbone = self._create_darknet_backbone()
         assert mode in ["object_detection", "classification"]
-        if mode == "classification":
-            self.head =  self._create_classif_head()
-        else:
-            self.head =  self._create_obj_detect_head()
+        self.head = None
+        if not nohead:
+            if mode == "classification":
+                self.head =  self._create_classif_head()
+            else:
+                self.head =  self._create_obj_detect_head()
 
     def print_params(self):
         #crepr = super(YoloV1, self).__repr__()
@@ -135,7 +137,7 @@ class YoloV1(nn.Module):
     def _create_obj_detect_head(self):
         
         dim_input = np.product(self._compute_backbone_shape()[1:])
-        print(f"head dim input : {dim_input}")
+        #print(f"head dim input : {dim_input}")
         dim_input = np.product(self._compute_backbone_shape()[1:])
 
         dim_output = self.S * self.S *  (self.C + self.B * self.ncol_coords)
@@ -152,7 +154,7 @@ class YoloV1(nn.Module):
     def _create_classif_head(self):
         
         dim_input = np.product(self._compute_backbone_shape()[1:])
-        print(f"head dim input : {dim_input}")
+        #print(f"head dim input : {dim_input}")
         dim_input = np.product(self._compute_backbone_shape()[1:])
 
         dim_output_obj_detect = self.S * self.S *  (self.C + self.B * self.ncol_coords)
