@@ -49,7 +49,9 @@
             "request": "launch",
             "program": "/home/nikoenki/Documents/Machine-Learning-Collection/ML/_nv/yolov1/train.py",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false,
+            "env":  {"PYTHONPATH": "${workspaceFolder}/ML/_nv/yolov1/${pathSeparator}${env:PYTHONPATH}"}
+            
         }
 
     ]

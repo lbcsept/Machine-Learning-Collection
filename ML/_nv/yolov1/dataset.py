@@ -1,7 +1,7 @@
 import logging
 import torch
 from torch.utils.data import Dataset
-from torchvision import io
+from torchvision import transforms,  io
 
 from glob import glob
 import os 

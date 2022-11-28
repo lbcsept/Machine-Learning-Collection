@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import numpy as np
 import os
-from .utils.yolo_utils import yolo_out_to_boxes_and_classes
+from utils.yolo_utils import yolo_out_to_boxes_and_classes
 from to_recode.loss_to_recode import YoloLossRC
 from utils import model_utils
 
@@ -77,6 +77,7 @@ num_epoch = config.EPOCHS
 config.mode = "object_detection" 
 model = YoloV1(**config.__dict__)
 model = model.to(device)
+print(model)
 model.print_params()
 
 
